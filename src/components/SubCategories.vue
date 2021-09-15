@@ -2,7 +2,7 @@
   <div class="wrapper">
     <div class="categorySection">
       <div class="head">
-        <div>Categories</div>
+        <div>Sub-Categories</div>
         <div class="buttons">
           <button class="editButton">Edit</button>
           <button class="deleteButton">Delete</button>
@@ -11,15 +11,13 @@
           </button>
         </div>
       </div>
-
       <div class="menu">
         <div
           class="category"
-          v-for="category in parentList"
-          :key="category.id"
-          :id="category.id"
+          v-for="subCategory in subCategoryList"
+          :key="subCategory.id"
         >
-          <div @click="getChilds(category.id)">{{ category.title }}</div>
+          <div @click="getChilds(subCategory.id)">{{ subCategory.title }}</div>
         </div>
         <div v-if="addNewItem == true">
           <input type="text" v-model="newCategory.title" />
@@ -28,36 +26,41 @@
       </div>
     </div>
     <div v-if="childList !== null">
-      <SubCategories :subCategoryList="childList" :parentId="parentId" />
+      <SubCategories :subCategoryList="childList" :parentId="categoryId" />
     </div>
   </div>
 </template>
 
 <script>
-// @ is an alias to /src
-import SubCategories from "@/components/SubCategories.vue";
 import axios from "axios";
 export default {
-  name: "Home",
+  name: "HomeComponent",
   components: {
-    SubCategories,
+    SubCategories: () => import("@/components/SubCategories.vue"),
+  },
+  props: {
+    subCategoryList: {
+      type: Array,
+    },
+    parentId: {
+      type: Number,
+    },
   },
   data() {
     return {
-      parentList: null,
       childList: null,
+      categoryId: null,
       addNewItem: false,
-      parentId: null,
       newCategory: {
         title: null,
-        CategoryId: null,
+        CategoryId: this.parentId,
         is_deleted: false,
       },
     };
   },
   methods: {
     getChilds(parentId) {
-      this.parentId = parentId;
+      this.categoryId = parentId;
       axios
         .get(`http://localhost:3000/category/child/${parentId}`)
         .then((get_response) => {
@@ -71,22 +74,11 @@ export default {
       this.addNewItem = !this.addNewItem;
       axios
         .post(`http://localhost:3000/category/create`, this.newCategory)
-        .then(this.parentList.push(this.newCategory))
+        .then(this.subCategoryList.push(this.newCategory))
         .catch((err) =>
           console.log("message: ", err.message, "status: ", err.status)
         );
     },
-  },
-
-  beforeCreate() {
-    axios
-      .get(`http://localhost:3000/category/parent`)
-      .then((get_response) => {
-        if (get_response?.status === 200) this.parentList = get_response.data;
-      })
-      .catch((err) =>
-        console.log("message: ", err.message, "status: ", err.status)
-      );
   },
 };
 </script>
